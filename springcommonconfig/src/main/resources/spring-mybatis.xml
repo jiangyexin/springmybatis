@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:context="http://www.springframework.org/schema/context"
+        xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context
+                           http://www.springframework.org/schema/context/spring-context-4.2.xsd">
+
+    <!--自动扫描-->
+    <context:component-scan base-package="com.spring.common" />
+    <!--引入配置文件-->
+    <bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PreferencesPlaceholderConfigurer">
+        <property name="location" value="classpath:jdbc.properties" />
+    </bean>
+    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"
+          init-method="createDataSource" destroy-method="close">
+        <property name="driverClassName" value="${db.comm.driver}" />
+        <property name="url" value="${db.url}?${db.comm.urlParam}" />
+        <property name="username" value="${db.user}" />
+        <property name="password" value="${db.pwd}" />
+        <!--初始连接大小-->
+        <property name="initialSize" value="${db.comm.initialSize}" />
+        <property name="maxIdle" value="20"/>
+        <property name="minIdle" value="5"/>
+        <property name="maxWait" value="100"/>
+        <!--连接参数 end-->
+
+
+        <!--PreparedStatements poll start  每个 connection 独享一个pool-->
+        <property name="poolPreparedStatements" value="true"/>
+        <property name="maxOpenPreparedStatements" value="50"/>
+        <!--PreparedStatements poll end -->
+
+        <!--连接验证参数 start-->
+        <!-- 用来检测连接是否有效的sql，要求是一个查询语句,如果validationQuery为
+             null，testOnBorrow、testOnReturn、testWhileIdle都不起其作用。 -->
+        <property name="validationQuery" value="SELECT 1;"/>
+        <property name="validationQueryTimeout" value="2"/>
+        <!-- 申请连接时执行validationQuery检测连接是否有效，配置为true会降低性能 -->
+        <property name="testOnBorrow" value="false"/>
+        <!-- 归还连接时执行validationQuery检测连接是否有效，配置为true会降低性能  -->
+        <property name="testOnReturn" value="false"/>
+        <!-- 建议配置为true，不影响性能，并且保证安全性。申请连接的时候检测，如果空闲时间大于
+             timeBetweenEvictionRunsMillis，执行validationQuery检测连接是否有效。  -->
+        <property name="testWhileIdle" value="true"/>
+        <property name="numTestsPerEvictionRun" value="5"/>
+
+        <!--每3分钟检测一次，将空闲30分钟后回收-->
+        <property name="timeBetweenEvictionRunsMillis"
+                  value="180000"/>
+        <property name="minEvictableIdleTimeMillis" value="1800000"/>
+        <!--<property name="softMinEvictableIdleTimeMillis" value=""/>-->
+        <!--<property name="maxConnLifetimeMillis" value=""/>-->
+        <!--<property name="logExpiredConnections" value=""/>-->
+        <!--连接验证参数 end-->
+
+        <!-- 只读权限 -->
+        <!--<property name="defaultReadOnly" value="true"/>-->
+        <!--<property name="defaultAutoCommit" value="false"/>-->
+        <!--<property name="enableAutoCommitOnReturn" value="false"/>-->
+
+        <!--
+                <property name="cacheState" value="false"/>
+                <property name="connectionProperties" value=""/>
+                <property name="defaultTransactionIsolation" value=""/>
+                <property name="connectionInitSqls" value=""/>
+                <property name="lifo" value="true"/>
+                <property name="accessToUnderlyingConnectionAllowed" value="false"/>
+        -->
+        <!--
+
+                <property name="defaultCatalog" value=""/>
+                <property name="driver" value=""/>
+                <property name="driverClassLoader" value=""/>
+                <property name="evictionPolicyClassName" value=""/>
+                <property name="fastFailValidation" value="false"/>
+                <property name="jmxName" value=""/>
+                <property name="removeAbandonedOnMaintenance" value=""/>
+                <property name="removeAbandonedOnBorrow" value=""/>
+                <property name="removeAbandonedTimeout" value="${db.comm.removeAbandonedTimeout}"/>
+                <property name="logAbandoned" value=""/>
+                <property name="abandonedLogWriter" value=""/>
+                <property name="abandonedUsageTracking" value="false"/>
+
+                <property name="disconnectionSqlCodes" value=""/>
+                <property name="logWriter" value=""/>
+                <property name="loginTimeout" value=""/>
+
+        -->
+    </bean>
+    <!--spring和mybatis完美整合 不需要mybatis的配置映射文件-->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource" />
+        <!--自动扫描mapping.xml文件-->
+        <property name="mapperLocations" value="classpath:mapping/*.xml" />
+    </bean>
+
+    <!--DAO接口所在的包名，Spring会自动查找其下的类-->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.spring.common.dao" />
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory" />
+    </bean>
+    <!--事务管理-->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource" />
+    </bean>
+</beans>
